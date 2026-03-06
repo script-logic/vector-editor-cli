@@ -22,7 +22,7 @@ class Coordinates:
     y: float
 
 
-class Shape(Protocol):
+class IShape(Protocol):
     """
     Protocol defining the interface for all geometric shapes.
     """

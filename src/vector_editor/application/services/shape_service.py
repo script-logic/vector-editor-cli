@@ -7,9 +7,9 @@ from uuid import UUID
 from src.vector_editor.domain.entities import (
     Circle,
     Coordinates,
+    IShape,
     Line,
     Point,
-    Shape,
     Square,
 )
 from src.vector_editor.domain.interfaces import IShapeRepository
@@ -163,7 +163,7 @@ class ShapeService:
         )
         return True
 
-    def get_all_shapes(self) -> list[Shape]:
+    def get_all_shapes(self) -> list[IShape]:
         """
         Get all shapes.
 

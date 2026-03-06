@@ -4,7 +4,7 @@ In-memory implementation of shape repository.
 
 from uuid import UUID
 
-from src.vector_editor.domain.entities import Shape
+from src.vector_editor.domain.entities import IShape
 from src.vector_editor.domain.interfaces import IShapeRepository
 from src.vector_editor.logger import get_logger
 
@@ -22,10 +22,10 @@ class InMemoryShapeRepository(IShapeRepository):
 
     def __init__(self) -> None:
         """Initialize an empty repository."""
-        self._shapes: dict[UUID, Shape] = {}
+        self._shapes: dict[UUID, IShape] = {}
         self._logger = logger.bind(component="InMemoryShapeRepository")
 
-    def add(self, shape: Shape) -> None:
+    def add(self, shape: IShape) -> None:
         """
         Add a shape to the repository.
 
@@ -76,7 +76,7 @@ class InMemoryShapeRepository(IShapeRepository):
             total_shapes=len(self._shapes),
         )
 
-    def get(self, shape_id: UUID) -> Shape | None:
+    def get(self, shape_id: UUID) -> IShape | None:
         """
         Get a shape by its ID.
 
@@ -94,7 +94,7 @@ class InMemoryShapeRepository(IShapeRepository):
         )
         return shape
 
-    def get_all(self) -> list[Shape]:
+    def get_all(self) -> list[IShape]:
         """
         Get all shapes in the repository.
 

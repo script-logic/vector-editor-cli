@@ -6,14 +6,14 @@ from uuid import UUID
 
 from src.vector_editor.domain.entities import (
     Circle,
+    IShape,
     Line,
     Point,
-    Shape,
     Square,
 )
 
 
-def format_shape(shape: Shape) -> str:
+def format_shape(shape: IShape) -> str:
     """
     Format a single shape for console output.
 
@@ -56,7 +56,7 @@ def format_shape(shape: Shape) -> str:
     return f"Unknown shape: {shape}"
 
 
-def format_shape_list(shapes: list[Shape]) -> str:
+def format_shape_list(shapes: list[IShape]) -> str:
     """
     Format a list of shapes for console output.
 

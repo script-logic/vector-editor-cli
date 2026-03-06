@@ -5,7 +5,7 @@ CLI application for vector editor.
 from uuid import UUID
 
 import click
-from src.vector_editor.application import ShapeService
+from src.vector_editor.application.services import ShapeService
 from src.vector_editor.logger import get_logger
 
 from .formatting import format_shape, format_shape_list

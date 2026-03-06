@@ -3,10 +3,12 @@ Vector Editor CLI entry point.
 """
 
 import click
-from src.vector_editor.application import ShapeService
+from src.vector_editor.application.services import ShapeService
 from src.vector_editor.cli import cli
 from src.vector_editor.config import get_config
-from src.vector_editor.infrastructure import InMemoryShapeRepository
+from src.vector_editor.infrastructure.repositories import (
+    InMemoryShapeRepository,
+)
 from src.vector_editor.logger import get_logger, setup_logging
 
 logger = get_logger(__name__)
