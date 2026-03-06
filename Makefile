@@ -27,8 +27,8 @@ fix:
 	uv run ruff check --fix
 
 lint:
-	poetry run ruff check .
-	poetry run ty check .
+	uv run ruff check .
+	uv run ty check .
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
