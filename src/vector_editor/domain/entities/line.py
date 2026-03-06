@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from .shape import Coordinates, ShapeBase
 
 
-@dataclass(frozen=True)
+@dataclass
 class Line(ShapeBase):
     """
     Represents a line segment between two points.
@@ -24,7 +24,8 @@ class Line(ShapeBase):
     end: Coordinates
 
     def __post_init__(self) -> None:
-        """Validate that start and end points are different."""
+        """Initialize base class and validate points."""
+        super().__init__()
         if self.start == self.end:
             raise ValueError("Start and end points must be different")
 

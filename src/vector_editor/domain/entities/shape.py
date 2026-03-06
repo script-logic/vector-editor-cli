@@ -43,4 +43,5 @@ class ShapeBase(ABC):
 
     @property
     def id(self) -> UUID:
+        """Get the shape's unique identifier."""
         return self._id

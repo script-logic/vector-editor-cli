@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from .shape import Coordinates, ShapeBase
 
 
-@dataclass(frozen=True)
+@dataclass
 class Square(ShapeBase):
     """
     Represents a square aligned with coordinate axes.
@@ -24,7 +24,8 @@ class Square(ShapeBase):
     side_length: float
 
     def __post_init__(self) -> None:
-        """Validate that side length is positive."""
+        """Initialize base class and validate side length."""
+        super().__init__()
         if self.side_length <= 0:
             raise ValueError(
                 f"Side length must be positive, got {self.side_length}"

@@ -6,6 +6,9 @@ DC := docker-compose -f $(DC_FILE)
 run:
 	uv run python main.py
 
+test:
+	uv run pytest
+
 up:
 	$(DC) up
 

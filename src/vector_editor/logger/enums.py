@@ -3,7 +3,7 @@ from enum import Enum, StrEnum
 
 
 class LoggersToHijack(Enum):
-    SQLALCHEMY_ENGINE = ("pydantic", logging.INFO)
+    PYDANTIC = ("pydantic", logging.INFO)
 
     @property
     def logger_name(self) -> str:

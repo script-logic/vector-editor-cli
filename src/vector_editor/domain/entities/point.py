@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from .shape import Coordinates, ShapeBase
 
 
-@dataclass(frozen=True)
+@dataclass
 class Point(ShapeBase):
     """
     Represents a point in 2D space.
@@ -20,6 +20,10 @@ class Point(ShapeBase):
     """
 
     coordinates: Coordinates
+
+    def __post_init__(self) -> None:
+        """Initialize base class after dataclass initialization."""
+        super().__init__()
 
     def __str__(self) -> str:
         """Human-readable representation."""

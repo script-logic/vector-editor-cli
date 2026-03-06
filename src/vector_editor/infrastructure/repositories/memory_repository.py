@@ -116,3 +116,12 @@ class InMemoryShapeRepository(IShapeRepository):
             "repository_cleared",
             removed_count=previous_count,
         )
+
+    def count(self) -> int:
+        """
+        Get the number of shapes in the repository.
+
+        Returns:
+            Total number of shapes
+        """
+        return len(self._shapes)

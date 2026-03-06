@@ -49,7 +49,7 @@ class ShapeService:
         """
         point = Point(coordinates=Coordinates(x=x, y=y))
         self._repository.add(point)
-        self._logger.info(
+        self._logger.debug(
             "point_created",
             shape_id=str(point.id),
             x=x,
@@ -75,7 +75,7 @@ class ShapeService:
             end=Coordinates(x=x2, y=y2),
         )
         self._repository.add(line)
-        self._logger.info(
+        self._logger.debug(
             "line_created",
             shape_id=str(line.id),
             start_x=x1,
@@ -102,7 +102,7 @@ class ShapeService:
             radius=radius,
         )
         self._repository.add(circle)
-        self._logger.info(
+        self._logger.debug(
             "circle_created",
             shape_id=str(circle.id),
             center_x=x,
@@ -128,7 +128,7 @@ class ShapeService:
             side_length=side_length,
         )
         self._repository.add(square)
-        self._logger.info(
+        self._logger.debug(
             "square_created",
             shape_id=str(square.id),
             top_left_x=x,
@@ -156,7 +156,7 @@ class ShapeService:
             return False
 
         self._repository.remove(shape_id)
-        self._logger.info(
+        self._logger.debug(
             "shape_deleted",
             shape_id=str(shape_id),
             shape_type=type(shape).__name__,
@@ -181,7 +181,7 @@ class ShapeService:
         """Delete all shapes."""
         count = self._repository.count()
         self._repository.clear()
-        self._logger.info(
+        self._logger.debug(
             "all_shapes_cleared",
             deleted_count=count,
         )

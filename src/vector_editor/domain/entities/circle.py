@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from .shape import Coordinates, ShapeBase
 
 
-@dataclass(frozen=True)
+@dataclass
 class Circle(ShapeBase):
     """
     Represents a circle in 2D space.
@@ -21,7 +21,8 @@ class Circle(ShapeBase):
     radius: float
 
     def __post_init__(self) -> None:
-        """Validate that radius is positive."""
+        """Initialize base class and validate radius."""
+        super().__init__()
         if self.radius <= 0:
             raise ValueError(f"Radius must be positive, got {self.radius}")
 
