@@ -1,0 +1,38 @@
+scan_project.py
+project_scan_output.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+poetry.lock
+.pytest_cache/
+.coverage
+htmlcov/
+.coverage.*
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+logs/*
+!logs/.gitkeep
+*.db
+*.db-journal
+
+# Build
+dist/
+build/
+*.egg-info/
