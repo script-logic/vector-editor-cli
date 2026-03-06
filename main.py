@@ -29,14 +29,15 @@ def main() -> None:
     click.echo(
         "\nAvailable commands:"
         "\npoint <x> <y>"
-        "\nline <x> <y> <x> <y>"
-        "\ncircle <x> <y> <radius>"
-        "\nsquare <x> <y> <length>"
+        "\nline <start_x> <start_y> <end_x> <end_y>"
+        "\ncircle <center_x> <center_y> <radius>"
+        "\nsquare <top_left_x> <top_left_y> <size>"
         "\nlist"
         "\ndelete <id>"
         "\nclear"
         "\ncount"
     )
+    click.echo("\nExample:\nline -56 65.7 0 -7")
     click.echo("\nType 'help <command>' for more info.\nType 'q' to quit.\n")
 
     ctx = click.Context(cli)
