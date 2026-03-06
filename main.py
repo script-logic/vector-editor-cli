@@ -25,11 +25,19 @@ def main() -> None:
     repository = InMemoryShapeRepository()
     shape_service = ShapeService(repository)
 
-    click.echo("🚀 Vector Editor CLI started. Type 'exit' to quit.")
+    click.echo("\n🚀 Vector Editor CLI started.")
     click.echo(
-        "Available commands: point, line, circle, square, list, delete, clear, count"
+        "\nAvailable commands:"
+        "\npoint <x> <y>"
+        "\nline <x> <y> <x> <y>"
+        "\ncircle <x> <y> <radius>"
+        "\nsquare <x> <y> <length>"
+        "\nlist"
+        "\ndelete <id>"
+        "\nclear"
+        "\ncount"
     )
-    click.echo("Type 'help <command>' for more info.\n")
+    click.echo("\nType 'help <command>' for more info.\nType 'q' to quit.\n")
 
     ctx = click.Context(cli)
     ctx.obj = {"service": shape_service}
@@ -38,7 +46,7 @@ def main() -> None:
         try:
             command = input("vector> ").strip()
 
-            if command.lower() in ("exit", "quit"):
+            if command.lower() in ("exit", "quit", "q"):
                 click.echo("👋 Goodbye!")
                 break
 

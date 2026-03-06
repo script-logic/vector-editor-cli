@@ -35,98 +35,232 @@ def _get_service(ctx: click.Context) -> ShapeService:
     return service
 
 
-@cli.command("point")
-@click.argument("x", type=float)
-@click.argument("y", type=float)
-@click.pass_context
-def create_point(ctx: click.Context, x: float, y: float) -> None:
-    """Create a new point at coordinates (X, Y)."""
-    service = _get_service(ctx)
+def _parse_float(value: str, coord_name: str) -> float:
+    """
+    Parse a string into float with error handling.
+
+    Args:
+        value: String to parse
+        coord_name: Name of the coordinate for error message
+
+    Returns:
+        Float value
+
+    Raises:
+        click.ClickException: If value cannot be converted to float
+    """
     try:
-        point = service.create_point(x, y)
+        return float(value)
+    except ValueError:
+        raise click.ClickException(
+            f"Invalid number for {coord_name}: '{value}'. Expected a number."
+        )
+
+
+@cli.command(
+    "point",
+    context_settings={
+        "ignore_unknown_options": True,
+        "allow_extra_args": True,
+    },
+)
+@click.argument("x", required=False)
+@click.argument("y", required=False)
+@click.pass_context
+def create_point(ctx: click.Context, x: str | None, y: str | None) -> None:
+    """
+    Create a new point at coordinates X Y.
+
+    Example: point 10 20 or point -5.5 3
+    """
+    service = _get_service(ctx)
+
+    args = ctx.args
+    if x is None and y is None and not args:
+        raise click.ClickException(
+            "Missing coordinates. Usage: point X Y (e.g., 'point 10 20')"
+        )
+
+    all_coords: list[str] = []
+    if x is not None:
+        all_coords.append(x)
+    if y is not None:
+        all_coords.append(y)
+    all_coords.extend(args)
+
+    if len(all_coords) != 2:
+        raise click.ClickException(
+            f"Expected 2 coordinates, got {len(all_coords)}: {' '.join(all_coords)}. "
+            "Usage: point X Y (e.g., 'point 10 20' or 'point -5.5 3')"
+        )
+
+    try:
+        x_val = _parse_float(all_coords[0], "X")
+        y_val = _parse_float(all_coords[1], "Y")
+        point = service.create_point(x_val, y_val)
         click.echo(f"✅ Created: {format_shape(point)}")
-        logger.debug("point_created_via_cli", x=x, y=y)
+        logger.debug("point_created_via_cli", x=x_val, y=y_val)
     except ValueError as e:
-        logger.error("point_creation_failed", x=x, y=y, error=str(e))
+        logger.error("point_creation_failed", error=str(e))
         raise click.ClickException(str(e))
 
 
-@cli.command("line")
-@click.argument("x1", type=float)
-@click.argument("y1", type=float)
-@click.argument("x2", type=float)
-@click.argument("y2", type=float)
+@cli.command(
+    "line",
+    context_settings={
+        "ignore_unknown_options": True,
+        "allow_extra_args": True,
+    },
+)
+@click.argument("x1", required=False)
+@click.argument("y1", required=False)
+@click.argument("x2", required=False)
+@click.argument("y2", required=False)
 @click.pass_context
 def create_line(
     ctx: click.Context,
-    x1: float,
-    y1: float,
-    x2: float,
-    y2: float,
+    x1: str | None,
+    y1: str | None,
+    x2: str | None,
+    y2: str | None,
 ) -> None:
-    """Create a new line from (X1, Y1) to (X2, Y2)."""
+    """
+    Create a new line from (X1, Y1) to (X2, Y2).
+
+    Example: line 10 20 30 40 or line -5 -5 10 10
+    """
     service = _get_service(ctx)
-    try:
-        line = service.create_line(x1, y1, x2, y2)
-        click.echo(f"✅ Created: {format_shape(line)}")
-        logger.debug("line_created_via_cli", x1=x1, y1=y1, x2=x2, y2=y2)
-    except ValueError as e:
-        logger.error(
-            "line_creation_failed", x1=x1, y1=y1, x2=x2, y2=y2, error=str(e)
+
+    args = ctx.args
+    all_coords = [coord for coord in [x1, y1, x2, y2] if coord is not None]
+    all_coords.extend(args)
+
+    if len(all_coords) != 4:
+        raise click.ClickException(
+            f"Expected 4 coordinates, got {len(all_coords)}: {' '.join(all_coords)}. "
+            "Usage: line X1 Y1 X2 Y2 (e.g., 'line 10 20 30 40')"
         )
+
+    try:
+        x1_val = _parse_float(all_coords[0], "X1")
+        y1_val = _parse_float(all_coords[1], "Y1")
+        x2_val = _parse_float(all_coords[2], "X2")
+        y2_val = _parse_float(all_coords[3], "Y2")
+        line = service.create_line(x1_val, y1_val, x2_val, y2_val)
+        click.echo(f"✅ Created: {format_shape(line)}")
+        logger.debug(
+            "line_created_via_cli", x1=x1_val, y1=y1_val, x2=x2_val, y2=y2_val
+        )
+    except ValueError as e:
+        logger.error("line_creation_failed", error=str(e))
         raise click.ClickException(str(e))
 
 
-@cli.command("circle")
-@click.argument("x", type=float)
-@click.argument("y", type=float)
-@click.argument("radius", type=float)
+@cli.command(
+    "circle",
+    context_settings={
+        "ignore_unknown_options": True,
+        "allow_extra_args": True,
+    },
+)
+@click.argument("x", required=False)
+@click.argument("y", required=False)
+@click.argument("radius", required=False)
 @click.pass_context
 def create_circle(
-    ctx: click.Context, x: float, y: float, radius: float
+    ctx: click.Context,
+    x: str | None,
+    y: str | None,
+    radius: str | None,
 ) -> None:
-    """Create a new circle with center at (X, Y) and given RADIUS."""
+    """
+    Create a new circle with center at (X, Y) and given RADIUS.
+
+    Example: circle 10 20 5 or circle -5.5 3 2.5
+    """
     service = _get_service(ctx)
-    try:
-        circle = service.create_circle(x, y, radius)
-        click.echo(f"✅ Created: {format_shape(circle)}")
-        logger.debug("circle_created_via_cli", x=x, y=y, radius=radius)
-    except ValueError as e:
-        logger.error(
-            "circle_creation_failed", x=x, y=y, radius=radius, error=str(e)
+
+    args = ctx.args
+    all_args = [arg for arg in [x, y, radius] if arg is not None]
+    all_args.extend(args)
+
+    if len(all_args) != 3:
+        raise click.ClickException(
+            f"Expected 3 arguments, got {len(all_args)}: {' '.join(all_args)}. "
+            "Usage: circle X Y RADIUS (e.g., 'circle 10 20 5')"
         )
+
+    try:
+        x_val = _parse_float(all_args[0], "X")
+        y_val = _parse_float(all_args[1], "Y")
+        radius_val = _parse_float(all_args[2], "RADIUS")
+
+        if radius_val <= 0:
+            raise click.ClickException(
+                f"Radius must be positive, got {radius_val}"
+            )
+
+        circle = service.create_circle(x_val, y_val, radius_val)
+        click.echo(f"✅ Created: {format_shape(circle)}")
+        logger.debug(
+            "circle_created_via_cli", x=x_val, y=y_val, radius=radius_val
+        )
+    except ValueError as e:
+        logger.error("circle_creation_failed", error=str(e))
         raise click.ClickException(str(e))
 
 
-@cli.command("square")
-@click.argument("x", type=float)
-@click.argument("y", type=float)
-@click.argument("side_length", type=float)
+@cli.command(
+    "square",
+    context_settings={
+        "ignore_unknown_options": True,
+        "allow_extra_args": True,
+    },
+)
+@click.argument("x", required=False)
+@click.argument("y", required=False)
+@click.argument("side_length", required=False)
 @click.pass_context
 def create_square(
     ctx: click.Context,
-    x: float,
-    y: float,
-    side_length: float,
+    x: str | None,
+    y: str | None,
+    side_length: str | None,
 ) -> None:
     """
     Create a new square with top-left corner at (X, Y) and given SIDE_LENGTH.
+
+    Example: square 10 20 5 or square -5.5 3 4
     """
     service = _get_service(ctx)
+
+    args = ctx.args
+    all_args = [arg for arg in [x, y, side_length] if arg is not None]
+    all_args.extend(args)
+
+    if len(all_args) != 3:
+        raise click.ClickException(
+            f"Expected 3 arguments, got {len(all_args)}: {' '.join(all_args)}. "
+            "Usage: square X Y SIDE_LENGTH (e.g., 'square 10 20 5')"
+        )
+
     try:
-        square = service.create_square(x, y, side_length)
+        x_val = _parse_float(all_args[0], "X")
+        y_val = _parse_float(all_args[1], "Y")
+        side_val = _parse_float(all_args[2], "SIDE_LENGTH")
+
+        if side_val <= 0:
+            raise click.ClickException(
+                f"Side length must be positive, got {side_val}"
+            )
+
+        square = service.create_square(x_val, y_val, side_val)
         click.echo(f"✅ Created: {format_shape(square)}")
         logger.debug(
-            "square_created_via_cli", x=x, y=y, side_length=side_length
+            "square_created_via_cli", x=x_val, y=y_val, side_length=side_val
         )
     except ValueError as e:
-        logger.error(
-            "square_creation_failed",
-            x=x,
-            y=y,
-            side_length=side_length,
-            error=str(e),
-        )
+        logger.error("square_creation_failed", error=str(e))
         raise click.ClickException(str(e))
 
 
