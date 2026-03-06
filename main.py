@@ -17,7 +17,6 @@ logger = get_logger(__name__)
 def main() -> None:
     """Application entry point."""
     config = get_config()
-
     setup_logging(config.logger_adapter)
     logger = get_logger("main.py")
     logger.debug("application_started", config=config.logger.model_dump())
@@ -45,7 +44,7 @@ def main() -> None:
 
     while True:
         try:
-            command = input("vector> ").strip()
+            command = input("command: ").strip()
 
             if command.lower() in ("exit", "quit", "q"):
                 click.echo("👋 Goodbye!")

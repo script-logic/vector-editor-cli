@@ -1,30 +1,13 @@
-DC_FILE := docker-compose.yml
-DC := docker-compose -f $(DC_FILE)
+DC := docker-compose
+APP := vector-editor
 
-.PHONY: run up down build rebuild test lint clean
+.PHONY: run test fix lint clean docker-build docker-run docker-stop
 
 run:
 	uv run python main.py
 
 test:
 	uv run pytest
-
-up:
-	$(DC) up
-
-up-detached:
-	$(DC) up -d
-
-down:
-	$(DC) down
-
-build:
-	$(DC) build
-
-rebuild:
-	$(MAKE) down
-	$(MAKE) build
-	$(MAKE) up
 
 fix:
 	uv run ruff check --fix
@@ -35,3 +18,17 @@ lint:
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
+
+docker-run:
+	$(DC) run --rm $(APP)
+
+docker-down:
+	$(DC) down
+
+docker-build:
+	$(DC) build
+
+docker-rebuild:
+	$(MAKE) docker-down
+	$(MAKE) docker-build
+	$(MAKE) docker-run

@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+.venv
+venv
+env
+ENV
+.env
+.uv
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Project specific
+logs/*
+!logs/.gitkeep
+tests/
+*.log
+*.pid
+*.pot
+
+# Distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# System files
+.DS_Store
+Thumbs.db
