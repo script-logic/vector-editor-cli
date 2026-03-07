@@ -13,8 +13,6 @@ from src.vector_editor.infrastructure.repositories import (
 )
 from src.vector_editor.logger import get_logger, setup_logging
 
-logger = get_logger(__name__)
-
 
 def main() -> None:
     """Application entry point."""
