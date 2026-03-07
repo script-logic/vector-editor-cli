@@ -2,6 +2,8 @@
 Vector Editor CLI entry point.
 """
 
+import sys
+
 import click
 from src.vector_editor.application.services import ShapeService
 from src.vector_editor.cli import cli
@@ -23,6 +25,7 @@ def main() -> None:
 
     repository = InMemoryShapeRepository()
     shape_service = ShapeService(repository)
+    ctx_obj: dict[str, object] = {"shape_service": shape_service}
 
     click.echo("\n🚀 Vector Editor CLI started.")
     click.echo(
@@ -30,7 +33,7 @@ def main() -> None:
         "\npoint <x> <y>"
         "\nline <start_x> <start_y> <end_x> <end_y>"
         "\ncircle <center_x> <center_y> <radius>"
-        "\nsquare <top_left_x> <top_left_y> <size>"
+        "\nsquare <top_left_x> <top_left_y> <side_length>"
         "\nlist"
         "\ndelete <id>"
         "\nclear"
@@ -38,9 +41,6 @@ def main() -> None:
     )
     click.echo("\nExample:\nline -56 65.7 0 -7")
     click.echo("\nType 'help <command>' for more info.\nType 'q' to quit.\n")
-
-    ctx = click.Context(cli)
-    ctx.obj = {"service": shape_service}
 
     while True:
         try:
@@ -51,13 +51,14 @@ def main() -> None:
                 break
 
             if not command:
+                click.echo(
+                    "Type 'help' for available commands or 'q' to quit."
+                )
                 continue
 
-            args = command.split()
             cli.main(
-                args=args,
-                obj={"service": shape_service},
-                prog_name="vector-editor",
+                args=command.split(),
+                obj=ctx_obj,
                 standalone_mode=False,
             )
         except click.exceptions.Exit:
@@ -65,11 +66,12 @@ def main() -> None:
         except click.exceptions.ClickException as e:
             click.echo(f"Error: {e}", err=True)
         except KeyboardInterrupt:
-            click.echo()
+            click.echo("Type 'q' to quit.")
             continue
         except Exception as e:
             logger.exception("unhandled_exception", error=str(e))
             click.echo(f"Unexpected error: {e}", err=True)
+            sys.exit()
 
 
 if __name__ == "__main__":

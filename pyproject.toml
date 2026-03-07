@@ -75,7 +75,8 @@ source = ["vector_editor"]
 omit = [
     "*/__pycache__/*",
     "*/tests/*",
-    "*/cli/*",
+    "*/logger/*",
+    "*/utils/*",
 ]
 
 [tool.coverage.report]

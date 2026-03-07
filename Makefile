@@ -19,16 +19,16 @@ lint:
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
-docker-run:
-	$(DC) run --rm $(APP)
-
 docker-down:
 	$(DC) down
 
 docker-build:
 	$(DC) build
 
+docker-run:
+	$(DC) run --rm $(APP)
+	$(DC) down
+
 docker-rebuild:
 	$(MAKE) docker-down
 	$(MAKE) docker-build
-	$(MAKE) docker-run

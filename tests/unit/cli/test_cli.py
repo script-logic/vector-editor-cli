@@ -37,18 +37,18 @@ def test_create_point(
     mock_service: Mock,
 ) -> None:
     """Test point creation command."""
-    expected_point = Point(coordinates=Coordinates(x=1.5, y=2.5))
+    expected_point = Point(coordinates=Coordinates(x=-1.5, y=2.5))
     mock_service.create_point.return_value = expected_point
 
     result: Result = runner.invoke(
         cli,
-        ["point", "1.5", "2.5"],
-        obj={"service": mock_service},
+        ["point", "-1.5", "2.5"],
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
     assert "✅ Created" in result.output
-    mock_service.create_point.assert_called_once_with(1.5, 2.5)
+    mock_service.create_point.assert_called_once_with(-1.5, 2.5)
 
 
 def test_create_line(
@@ -65,7 +65,7 @@ def test_create_line(
     result: Result = runner.invoke(
         cli,
         ["line", "1", "2", "3", "4"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -87,7 +87,7 @@ def test_create_circle(
     result: Result = runner.invoke(
         cli,
         ["circle", "0", "0", "5"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -107,7 +107,7 @@ def test_create_circle_with_invalid_radius(
     result: Result = runner.invoke(
         cli,
         ["circle", "0", "0", "--", "-5"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code != 0
@@ -128,7 +128,7 @@ def test_create_square(
     result: Result = runner.invoke(
         cli,
         ["square", "1", "2", "3"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -146,7 +146,7 @@ def test_list_shapes_empty(
     result: Result = runner.invoke(
         cli,
         ["list"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -167,7 +167,7 @@ def test_list_shapes_with_data(
     result: Result = runner.invoke(
         cli,
         ["list"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -187,7 +187,7 @@ def test_delete_shape_with_full_uuid(
     result: Result = runner.invoke(
         cli,
         ["delete", str(shape_id)],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -209,7 +209,7 @@ def test_delete_shape_with_short_id(
     result: Result = runner.invoke(
         cli,
         ["delete", short_id],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -237,7 +237,7 @@ def test_delete_shape_with_ambiguous_short_id(
     result: Result = runner.invoke(
         cli,
         ["delete", short_id],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code != 0
@@ -256,7 +256,7 @@ def test_delete_shape_not_found(
     result: Result = runner.invoke(
         cli,
         ["delete", str(shape_id)],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code != 0
@@ -273,7 +273,7 @@ def test_count_shapes(
     result: Result = runner.invoke(
         cli,
         ["count"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -291,7 +291,7 @@ def test_clear_all_with_confirmation(
         cli,
         ["clear"],
         input="y\n",
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
@@ -309,7 +309,7 @@ def test_clear_all_without_confirmation(
     result: Result = runner.invoke(
         cli,
         ["clear", "--yes"],
-        obj={"service": mock_service},
+        obj={"shape_service": mock_service},
     )
 
     assert result.exit_code == 0
