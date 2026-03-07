@@ -378,7 +378,7 @@ MIT License - feel free to use and modify.
 git clone https://github.com/script-logic/vector-editor-cli.git
 cd vector-editor-cli
 
-# Установка с uv (рекомендуется)
+# Установка с uv
 uv venv
 uv pip install -e .
 ```
