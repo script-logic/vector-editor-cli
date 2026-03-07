@@ -1,49 +1,65 @@
-# Version control
-.git
-.gitignore
-.gitattributes
-
-# Python
-__pycache__
+# standart
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
-.pytest_cache
-.coverage
-htmlcov
-.venv
-venv
-env
-ENV
+.Python
 .env
-.uv
+.env.*
+.pytest_cache/
+.vscode/
+tree.py
+celerybeat-schedule
+scripts
 
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-*~
+# pytest
+.pytest_cache/
+.cache/
+start_dev.ps1
+scripts
+test.db
+
+# coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+
+# test logs
+pytest.xml
+test-results/
+*.log
+
+# Git
+.git
+.gitignore
 
 # Docker
-Dockerfile
-docker-compose*.yml
 .dockerignore
+Dockerfile
+Dockerfile.dockerignore
 
-# Project specific
-logs/*
-!logs/.gitkeep
-tests/
-*.log
-*.pid
-*.pot
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+.env.local
+.env.*.local
+scan_project.py
+project_scan_output.txt
 
-# Distribution
-build/
-dist/
-*.egg-info/
-*.egg
+# IDEs
+.vscode/
+.idea/
+.ruff_cache
 
-# System files
-.DS_Store
+# OS-specific
+*.DS_Store
 Thumbs.db
