@@ -5,7 +5,7 @@ Repository interfaces for shape storage.
 from typing import Protocol
 from uuid import UUID
 
-from src.vector_editor.domain.entities import IShape
+from src.vector_editor.domain import PlacedShape
 
 
 class IShapeRepository(Protocol):
@@ -16,7 +16,7 @@ class IShapeRepository(Protocol):
     interface for accessing shapes without exposing storage details.
     """
 
-    def add(self, shape: IShape) -> None:
+    def add(self, shape: PlacedShape) -> None:
         """Add a shape to the repository."""
         ...
 
@@ -24,11 +24,11 @@ class IShapeRepository(Protocol):
         """Remove a shape by its ID."""
         ...
 
-    def get(self, shape_id: UUID) -> IShape | None:
+    def get(self, shape_id: UUID) -> PlacedShape | None:
         """Get a shape by its ID, returns None if not found."""
         ...
 
-    def get_all(self) -> list[IShape]:
+    def get_all(self) -> list[PlacedShape]:
         """Get all shapes in the repository."""
         ...
 

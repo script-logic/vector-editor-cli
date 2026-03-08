@@ -26,7 +26,7 @@ class PlacedShape:
     id: UUID = field(default_factory=uuid4)
 
     def render(self) -> IShape:
-        """j
+        """
         Compute the concrete geometry for this shape.
 
         Returns:

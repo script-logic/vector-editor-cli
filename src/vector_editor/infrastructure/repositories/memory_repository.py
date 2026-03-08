@@ -4,7 +4,7 @@ In-memory implementation of shape repository.
 
 from uuid import UUID
 
-from src.vector_editor.domain.entities import IShape
+from src.vector_editor.domain import PlacedShape
 from src.vector_editor.domain.interfaces import IShapeRepository
 from src.vector_editor.logger import get_logger
 
@@ -15,17 +15,16 @@ class InMemoryShapeRepository(IShapeRepository):
     """
     Thread-safe in-memory implementation of shape repository.
 
-    Stores shapes in a dictionary keyed by UUID. This implementation
-    is suitable for development and testing, but shapes are lost
+    Stores shapes in a dictionary keyed by UUID. Shapes are lost
     when the application stops.
     """
 
     def __init__(self) -> None:
         """Initialize an empty repository."""
-        self._shapes: dict[UUID, IShape] = {}
+        self._shapes: dict[UUID, PlacedShape] = {}
         self._logger = logger.bind(component="InMemoryShapeRepository")
 
-    def add(self, shape: IShape) -> None:
+    def add(self, shape: PlacedShape) -> None:
         """
         Add a shape to the repository.
 
@@ -46,7 +45,7 @@ class InMemoryShapeRepository(IShapeRepository):
         self._logger.debug(
             "shape_added",
             shape_id=str(shape.id),
-            shape_type=type(shape).__name__,
+            shape_type=type(shape.definition).__name__,
             total_shapes=len(self._shapes),
         )
 
@@ -67,7 +66,7 @@ class InMemoryShapeRepository(IShapeRepository):
             )
             raise KeyError(f"Shape with id {shape_id} not found")
 
-        shape_type = type(self._shapes[shape_id]).__name__
+        shape_type = type(self._shapes[shape_id].definition).__name__
         del self._shapes[shape_id]
         self._logger.debug(
             "shape_removed",
@@ -76,7 +75,7 @@ class InMemoryShapeRepository(IShapeRepository):
             total_shapes=len(self._shapes),
         )
 
-    def get(self, shape_id: UUID) -> IShape | None:
+    def get(self, shape_id: UUID) -> PlacedShape | None:
         """
         Get a shape by its ID.
 
@@ -94,12 +93,12 @@ class InMemoryShapeRepository(IShapeRepository):
         )
         return shape
 
-    def get_all(self) -> list[IShape]:
+    def get_all(self) -> list[PlacedShape]:
         """
         Get all shapes in the repository.
 
         Returns:
-            List of all shapes (order is not guaranteed)
+            List of all shapes
         """
         shapes = list(self._shapes.values())
         self._logger.debug(
