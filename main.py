@@ -28,16 +28,25 @@ def main() -> None:
     click.echo("\n🚀 Vector Editor CLI started.")
     click.echo(
         "\nAvailable commands:"
-        "\npoint <x> <y>"
-        "\nline <start_x> <start_y> <end_x> <end_y>"
-        "\ncircle <center_x> <center_y> <radius>"
-        "\nsquare <top_left_x> <top_left_y> <side_length>"
-        "\nlist"
+        "\n\n☑ Shape creation:"
+        "\npoint <x> <y> [--angle <degrees>]"
+        "\nline <start_x> <start_y> <end_x> <end_y> [--angle <degrees>]"
+        "\nline-polar <start_x> <start_y> <length> <angle_degrees> "
+        "[--angle <additional_degrees>]"
+        "\ncircle <center_x> <center_y> <radius> [--angle <degrees>]"
+        "\nsquare <center_x> <center_y> <side_size> [--angle <degrees>]"
+        "\nrectangle <center_x> <center_y> <width> <height> "
+        "[--angle <degrees>]"
+        "\nellipse <center_x> <center_y> <radius_x> <radius_y> "
+        "[--angle <degrees>]"
+        "\n\n☒ Shape deletion:"
         "\ndelete <id>"
         "\nclear"
+        "\n\n⚠ Shapes info:"
+        "\nlist"
         "\ncount"
     )
-    click.echo("\nExample:\nline -56 65.7 0 -7")
+    click.echo("\n\nExample:\nline -56 65.7 0 -7 --angle 45")
     click.echo("\nType 'help <command>' for more info.\nType 'q' to quit.\n")
 
     while True:

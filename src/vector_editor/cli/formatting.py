@@ -4,59 +4,74 @@ Console output formatting utilities for CLI.
 
 from uuid import UUID
 
-from src.vector_editor.domain.entities import (
-    Circle,
-    IShape,
-    Line,
-    Point,
-    Square,
+from src.vector_editor.domain import PlacedShape
+from src.vector_editor.domain.geometry import (
+    CircleGeometry,
+    EllipseGeometry,
+    LineGeometry,
+    PointGeometry,
+    RectangleGeometry,
+    SquareGeometry,
 )
 
 
-def format_shape(shape: IShape) -> str:
+def format_shape(shape: PlacedShape) -> str:
     """
-    Format a single shape for console output.
+    Format a placed shape for console output.
 
     Args:
-        shape: The shape to format
+        shape: The placed shape to format
 
     Returns:
         Formatted string representation
     """
-    try:
-        shape_id = _short_id(shape.id) if hasattr(shape, "id") else "test-id"
-    except AttributeError, ValueError:
-        shape_id = "test-id"
+    shape_id = _short_id(shape.id)
+    geometry = shape.render()
+    rotation = shape.transform.rotation_deg
 
-    if isinstance(shape, Point):
+    if isinstance(geometry, PointGeometry):
         return (
-            f"🟤 Point(ID: {shape_id}, "
-            f"x={shape.coordinates.x:.2f}, y={shape.coordinates.y:.2f})"
+            f"⋅ Point(ID: {shape_id}, "
+            f"x={geometry.coordinates.x:.2f}, y={geometry.coordinates.y:.2f}, "
+            f"rot={rotation:.1f}°)"
         )
-    if isinstance(shape, Line):
+    if isinstance(geometry, LineGeometry):
         return (
-            f"📏 Line(ID: {shape_id}, "
-            f"({shape.start.x:.2f}, {shape.start.y:.2f}) → "
-            f"({shape.end.x:.2f}, {shape.end.y:.2f}))"
+            f"─ Line(ID: {shape_id}, "
+            f"({geometry.start.x:.2f}, {geometry.start.y:.2f}) → "
+            f"({geometry.end.x:.2f}, {geometry.end.y:.2f}), "
+            f"rot={rotation:.1f}°)"
         )
-    if isinstance(shape, Circle):
+    if isinstance(geometry, CircleGeometry):
         return (
-            f"⚪ Circle(ID: {shape_id}, "
-            f"center=({shape.center.x:.2f}, {shape.center.y:.2f}), "
-            f"radius={shape.radius:.2f})"
+            f"◯ Circle(ID: {shape_id}, "
+            f"center=({geometry.center.x:.2f}, {geometry.center.y:.2f}), "
+            f"radius={geometry.radius:.2f}, rot={rotation:.1f}°)"
         )
-    if isinstance(shape, Square):
-        bottom_right = shape.bottom_right()
+    if isinstance(geometry, SquareGeometry):
         return (
-            f"⬛ Square(ID: {shape_id}, "
-            f"top_left=({shape.top_left.x:.2f}, {shape.top_left.y:.2f}), "
-            f"bottom_right=({bottom_right.x:.2f}, {bottom_right.y:.2f}), "
-            f"side={shape.side_length:.2f})"
+            f"☐ Square(ID: {shape_id}, "
+            f"center=({geometry.center.x:.2f}, {geometry.center.y:.2f}), "
+            f"side={geometry.side_length:.2f}, rot={rotation:.1f}°)"
         )
-    return f"Unknown shape: {shape}"
+    if isinstance(geometry, RectangleGeometry):
+        return (
+            f"▭ Rectangle(ID: {shape_id}, "
+            f"center=({geometry.center.x:.2f}, {geometry.center.y:.2f}), "
+            f"width={geometry.width:.2f}, height={geometry.height:.2f}, "
+            f"rot={rotation:.1f}°)"
+        )
+    if isinstance(geometry, EllipseGeometry):
+        return (
+            f"𝟶 Ellipse(ID: {shape_id}, "
+            f"center=({geometry.center.x:.2f}, {geometry.center.y:.2f}), "
+            f"rx={geometry.radius_x:.2f}, ry={geometry.radius_y:.2f}, "
+            f"rot={rotation:.1f}°)"
+        )
+    return f"Unknown shape: {geometry}"
 
 
-def format_shape_list(shapes: list[IShape]) -> str:
+def format_shape_list(shapes: list[PlacedShape]) -> str:
     """
     Format a list of shapes for console output.
 

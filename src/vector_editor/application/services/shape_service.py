@@ -4,15 +4,17 @@ Application service for shape management.
 
 from uuid import UUID
 
-from src.vector_editor.domain.entities import (
-    Circle,
-    Coordinates,
-    IShape,
-    Line,
-    Point,
-    Square,
+from src.vector_editor.domain import PlacedShape
+from src.vector_editor.domain.definitions import (
+    CircleDefinition,
+    EllipseDefinition,
+    LineDefinition,
+    PointDefinition,
+    RectangleDefinition,
+    SquareDefinition,
 )
 from src.vector_editor.domain.interfaces import IShapeRepository
+from src.vector_editor.domain.primitives import Coordinates, Transform
 from src.vector_editor.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,56 +38,121 @@ class ShapeService:
         self._repository = repository
         self._logger = logger.bind(component="ShapeService")
 
-    def create_point(self, x: float, y: float) -> Point:
+    def create_point(
+        self, x: float, y: float, rotation: float = 0
+    ) -> PlacedShape:
         """
         Create and store a new point.
 
         Args:
             x: X-coordinate
             y: Y-coordinate
+            rotation: Rotation angle in degrees
 
         Returns:
-            The created point
+            The created placed shape
         """
-        point = Point(coordinates=Coordinates(x=x, y=y))
-        self._repository.add(point)
+        definition = PointDefinition(coordinates=Coordinates(x=x, y=y))
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
         self._logger.debug(
             "point_created",
-            shape_id=str(point.id),
+            shape_id=str(shape.id),
             x=x,
             y=y,
+            rotation=rotation,
         )
-        return point
+        return shape
 
-    def create_line(self, x1: float, y1: float, x2: float, y2: float) -> Line:
+    def create_line(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        rotation: float = 0,
+    ) -> PlacedShape:
         """
-        Create and store a new line segment.
+        Create and store a new line segment from two points.
 
         Args:
             x1: Start point X-coordinate
             y1: Start point Y-coordinate
             x2: End point X-coordinate
             y2: End point Y-coordinate
+            rotation: Rotation angle in degrees
 
         Returns:
-            The created line
+            The created placed shape
         """
-        line = Line(
+        definition = LineDefinition.from_points(
             start=Coordinates(x=x1, y=y1),
             end=Coordinates(x=x2, y=y2),
         )
-        self._repository.add(line)
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
         self._logger.debug(
             "line_created",
-            shape_id=str(line.id),
+            shape_id=str(shape.id),
             start_x=x1,
             start_y=y1,
             end_x=x2,
             end_y=y2,
+            rotation=rotation,
         )
-        return line
+        return shape
 
-    def create_circle(self, x: float, y: float, radius: float) -> Circle:
+    def create_line_polar(
+        self,
+        x: float,
+        y: float,
+        length: float,
+        angle: float,
+        rotation: float = 0,
+    ) -> PlacedShape:
+        """
+        Create and store a new line segment from polar coordinates.
+
+        Args:
+            x: Origin X-coordinate
+            y: Origin Y-coordinate
+            length: Length of the line
+            angle: Base angle in degrees
+            rotation: Additional rotation angle in degrees
+
+        Returns:
+            The created placed shape
+        """
+        definition = LineDefinition.from_polar(
+            origin=Coordinates(x=x, y=y),
+            length=length,
+            angle_deg=angle,
+        )
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
+        self._logger.debug(
+            "line_polar_created",
+            shape_id=str(shape.id),
+            origin_x=x,
+            origin_y=y,
+            length=length,
+            base_angle=angle,
+            rotation=rotation,
+        )
+        return shape
+
+    def create_circle(
+        self, x: float, y: float, radius: float, rotation: float = 0
+    ) -> PlacedShape:
         """
         Create and store a new circle.
 
@@ -93,49 +160,147 @@ class ShapeService:
             x: Center X-coordinate
             y: Center Y-coordinate
             radius: Circle radius (must be positive)
+            rotation: Rotation angle in degrees
 
         Returns:
-            The created circle
+            The created placed shape
         """
-        circle = Circle(
+        definition = CircleDefinition(
             center=Coordinates(x=x, y=y),
             radius=radius,
         )
-        self._repository.add(circle)
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
         self._logger.debug(
             "circle_created",
-            shape_id=str(circle.id),
+            shape_id=str(shape.id),
             center_x=x,
             center_y=y,
             radius=radius,
+            rotation=rotation,
         )
-        return circle
+        return shape
 
-    def create_square(self, x: float, y: float, side_length: float) -> Square:
+    def create_square(
+        self, x: float, y: float, side_length: float, rotation: float = 0
+    ) -> PlacedShape:
         """
         Create and store a new square.
 
         Args:
-            x: Top-left X-coordinate
-            y: Top-left Y-coordinate
+            x: Center X-coordinate
+            y: Center Y-coordinate
             side_length: Length of each side (must be positive)
+            rotation: Rotation angle in degrees
 
         Returns:
-            The created square
+            The created placed shape
         """
-        square = Square(
-            top_left=Coordinates(x=x, y=y),
+        definition = SquareDefinition(
+            center=Coordinates(x=x, y=y),
             side_length=side_length,
         )
-        self._repository.add(square)
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
         self._logger.debug(
             "square_created",
-            shape_id=str(square.id),
-            top_left_x=x,
-            top_left_y=y,
+            shape_id=str(shape.id),
+            center_x=x,
+            center_y=y,
             side_length=side_length,
+            rotation=rotation,
         )
-        return square
+        return shape
+
+    def create_rectangle(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        rotation: float = 0,
+    ) -> PlacedShape:
+        """
+        Create and store a new rectangle.
+
+        Args:
+            x: Center X-coordinate
+            y: Center Y-coordinate
+            width: Width of the rectangle (must be positive)
+            height: Height of the rectangle (must be positive)
+            rotation: Rotation angle in degrees
+
+        Returns:
+            The created placed shape
+        """
+        definition = RectangleDefinition(
+            center=Coordinates(x=x, y=y),
+            width=width,
+            height=height,
+        )
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
+        self._logger.debug(
+            "rectangle_created",
+            shape_id=str(shape.id),
+            center_x=x,
+            center_y=y,
+            width=width,
+            height=height,
+            rotation=rotation,
+        )
+        return shape
+
+    def create_ellipse(
+        self,
+        x: float,
+        y: float,
+        radius_x: float,
+        radius_y: float,
+        rotation: float = 0,
+    ) -> PlacedShape:
+        """
+        Create and store a new ellipse.
+
+        Args:
+            x: Center X-coordinate
+            y: Center Y-coordinate
+            radius_x: Horizontal radius (must be positive)
+            radius_y: Vertical radius (must be positive)
+            rotation: Rotation angle in degrees
+
+        Returns:
+            The created placed shape
+        """
+        definition = EllipseDefinition(
+            center=Coordinates(x=x, y=y),
+            radius_x=radius_x,
+            radius_y=radius_y,
+        )
+        shape = PlacedShape(
+            definition=definition,
+            transform=Transform(rotation_deg=rotation),
+        )
+        self._repository.add(shape)
+        self._logger.debug(
+            "ellipse_created",
+            shape_id=str(shape.id),
+            center_x=x,
+            center_y=y,
+            radius_x=radius_x,
+            radius_y=radius_y,
+            rotation=rotation,
+        )
+        return shape
 
     def delete_shape(self, shape_id: UUID) -> bool:
         """
@@ -159,11 +324,11 @@ class ShapeService:
         self._logger.debug(
             "shape_deleted",
             shape_id=str(shape_id),
-            shape_type=type(shape).__name__,
+            shape_type=type(shape.definition).__name__,
         )
         return True
 
-    def get_all_shapes(self) -> list[IShape]:
+    def get_all_shapes(self) -> list[PlacedShape]:
         """
         Get all shapes.
 
