@@ -22,13 +22,16 @@ def main() -> None:
     logger.debug("application_started", config=config.logger.model_dump())
 
     repository = InMemoryShapeRepository()
-    shape_service = ShapeService(repository)
-    ctx_obj: dict[str, object] = {"shape_service": shape_service}
+    shape_service = ShapeService(repository, config)
+    ctx_obj: dict[str, object] = {
+        "shape_service": shape_service,
+        "config": config,
+    }
 
     click.echo("\n🚀 Vector Editor CLI started.")
     click.echo(
         "\nAvailable commands:"
-        "\n\n☑ Shape creation:"
+        "\n\n📐 Shape creation:"
         "\npoint <x> <y> [--angle <degrees>]"
         "\nline <start_x> <start_y> <end_x> <end_y> [--angle <degrees>]"
         "\nline-polar <start_x> <start_y> <length> <angle_degrees> "
@@ -39,14 +42,18 @@ def main() -> None:
         "[--angle <degrees>]"
         "\nellipse <center_x> <center_y> <radius_x> <radius_y> "
         "[--angle <degrees>]"
-        "\n\n☒ Shape deletion:"
+        "\n\n💥 Shape deletion:"
         "\ndelete <id>"
         "\nclear"
-        "\n\n⚠ Shapes info:"
+        "\n\n❗ Shapes info:"
         "\nlist"
         "\ncount"
+        "\n\n💾 Save/Load:"
+        "\nsave [<filename>]"
+        "\nload [<filename>]"
     )
-    click.echo("\n\nExample:\nline -56 65.7 0 -7 --angle 45")
+    click.echo("\n\nExample 1:\nline -56 65.7 0 -7 --angle 45")
+    click.echo("Example 2:\nellipse 6 65 30 2 -a -756")
     click.echo("\nType 'help <command>' for more info.\nType 'q' to quit.\n")
 
     while True:

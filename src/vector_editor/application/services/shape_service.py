@@ -2,8 +2,12 @@
 Application service for shape management.
 """
 
+from pathlib import Path
+from typing import Any
 from uuid import UUID
 
+import orjson
+from src.vector_editor.config import AppConfig
 from src.vector_editor.domain import PlacedShape
 from src.vector_editor.domain.definitions import (
     CircleDefinition,
@@ -15,6 +19,10 @@ from src.vector_editor.domain.definitions import (
 )
 from src.vector_editor.domain.interfaces import IShapeRepository
 from src.vector_editor.domain.primitives import Coordinates, Transform
+from src.vector_editor.infrastructure.serialization import (
+    dict_to_shape,
+    shape_to_dict,
+)
 from src.vector_editor.logger import get_logger
 
 logger = get_logger(__name__)
@@ -28,13 +36,18 @@ class ShapeService:
     and acts as a facade for the CLI layer.
     """
 
-    def __init__(self, repository: IShapeRepository) -> None:
+    def __init__(
+        self, repository: IShapeRepository, config: AppConfig
+    ) -> None:
         """
         Initialize the service with a repository.
 
         Args:
             repository: The shape repository to use
         """
+        self._serialization_version = (
+            config.file_system.db_json_serialization_version
+        )
         self._repository = repository
         self._logger = logger.bind(component="ShapeService")
 
@@ -354,3 +367,126 @@ class ShapeService:
     def count_shapes(self) -> int:
         """Get the total number of shapes."""
         return self._repository.count()
+
+    def save_to_file(self, path: Path) -> int:
+        """
+        Save all shapes to a JSON file.
+
+        Args:
+            path: File path to save to.
+
+        Returns:
+            Number of shapes saved.
+
+        Raises:
+            IOError: If file cannot be written.
+        """
+
+        shapes = self._repository.get_all()
+        data: dict[str, Any] = {
+            "version": self._serialization_version,
+            "shapes": [shape_to_dict(s) for s in shapes],
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
+
+        self._logger.debug(
+            "shapes_saved_to_file",
+            path=str(path),
+            count=len(shapes),
+        )
+        return len(shapes)
+
+    def load_from_file(self, path: Path) -> list[PlacedShape]:
+        """
+        Load shapes from a JSON file.
+
+        Args:
+            path: File path to load from.
+
+        Returns:
+            List of loaded shapes.
+
+        Raises:
+            FileNotFoundError: If file does not exist.
+            ValueError: If file contains invalid data.
+        """
+        try:
+            with open(path, "rb") as f:
+                data = orjson.loads(f.read())
+        except orjson.JSONDecodeError as e:
+            self._logger.error(
+                "invalid_json",
+                error=str(e),
+            )
+            raise ValueError("JSONDecodeError") from e
+
+        version = data.get("version", "1.0")
+        if version != self._serialization_version:
+            self._logger.warning(
+                "loading_different_version",
+                expected=self._serialization_version,
+                got=version,
+            )
+
+        shapes_data = data.get("shapes", [])
+        loaded: list[PlacedShape] = []
+        errors: int = 0
+        for item in shapes_data:
+            try:
+                shape = dict_to_shape(item)
+                loaded.append(shape)
+            except ValueError as e:
+                errors += 1
+                self._logger.error(
+                    "skipping_invalid_shape",
+                    error=str(e),
+                )
+
+        if errors:
+            self._logger.warning(
+                "shapes_loaded_with_errors",
+                total_loaded=len(loaded),
+                errors=errors,
+            )
+        else:
+            self._logger.debug("shapes_loaded", count=len(loaded))
+
+        return loaded
+
+    def add_shapes(
+        self, shapes: list[PlacedShape], skip_duplicates: bool = True
+    ) -> int:
+        """
+        Add multiple shapes to the repository.
+
+        Args:
+            shapes: List of shapes to add.
+            skip_duplicates: If True, skip shapes with IDs that already exist.
+
+        Returns:
+            Number of shapes actually added.
+
+        Raises:
+            ValueError: If skip_duplicates is False and a duplicate is found.
+        """
+        added = 0
+        for shape in shapes:
+            try:
+                self._repository.add(shape)
+                added += 1
+            except ValueError as e:
+                if "already exists" in str(e) and skip_duplicates:
+                    self._logger.debug(
+                        "skipping_duplicate_shape",
+                        shape_id=str(shape.id),
+                    )
+                else:
+                    raise
+        self._logger.debug(
+            "shapes_added",
+            attempted=len(shapes),
+            added=added,
+        )
+        return added

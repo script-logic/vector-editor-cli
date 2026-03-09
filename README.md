@@ -16,7 +16,7 @@
 
 # 📐 Vector Editor CLI
 
-A clean, interactive command-line tool for creating and managing geometric shapes.
+Interactive command-line tool for creating and managing geometric shapes.
 Built with clean architecture.
 
 </div>
@@ -28,6 +28,7 @@ Built with clean architecture.
 - [Quick Start](#quick-start-english)
 - [Project Structure](#project-structure-english)
 - [Usage](#usage-english)
+- [Persistent Storage](#persistent-storage-english)
 - [Architecture](#architecture-english)
 - [Logging System](#logging-system-english)
 - [Development](#development-english)
@@ -39,11 +40,17 @@ Built with clean architecture.
 ## ✨ Features
 
 - **Shape Management**:
-  - Create points, lines, circles, and squares
+  - Create points, lines, circles, squares, rectangles, ellipses
   - List all shapes with formatted output
   - Delete shapes by ID (with partial ID matching)
   - Clear all shapes at once
   - Count total shapes
+
+- **Persistent Storage**:
+  - Save current shapes to a JSON file
+  - Load shapes from a JSON file with intelligent merging
+  - Automatic conflict resolution (duplicate IDs are skipped)
+  - Configurable file location (default: `database/shapes.json`)
 
 - **Clean Architecture**:
   - Strict separation of concerns (Domain, Application, Infrastructure)
@@ -54,7 +61,7 @@ Built with clean architecture.
 - **Enterprise Logging**:
   - Structured logging with `structlog`
   - JSON output for production, colored console for development
-  - Automatic context binding
+  - Context binding
   - File rotation support
   - Third-party logger hijacking
 
@@ -106,29 +113,30 @@ make run
 ## 📁 Project Structure
 
 ```
+├── database/                            # Persistent storage (JSON files)
+│   └── shapes.json                      # Default shape file
+├── logs/                                # Application logs
 ├── src/
 │   └── vector_editor/
-│       ├── domain/                      # Core business logic
-│       │   ├── entities/                # Shapes (Point, Line, Circle, Square)
-│       │   └── interfaces/              # Repository protocol
 │       ├── application/                 # Application layer
 │       │   └── services/                # ShapeService (use cases)
-│       ├── infrastructure/              # External concerns
-│       │   └── repositories/            # InMemoryShapeRepository
 │       ├── cli/                         # CLI interface
 │       │   ├── app.py                   # Click commands
-│       │   └── formatting.py            # Console output formatting
+│       │   └── formatting.py            # Console output
 │       ├── config/                      # Configuration
 │       │   └── config.py                # Pydantic settings
+│       ├── domain/                      # Core business logic
+│       │   ├── definitions/             # Shape definitions
+│       │   ├── geometry/                # Geometric representations
+│       │   ├── interfaces/              # Repository protocol
+│       │   ├── primitives/              # Coordinates, Transform
+│       │   └── placed_shape.py          # Shape with ID & transform
+│       ├── infrastructure/              # External concerns
+│       │   ├── repositories/            # InMemoryShapeRepository
+│       │   └── serialization.py         # JSON serialization
 │       ├── logger/                      # Structured logging system
-│       │   ├── processors.py            # Log processors
-│       │   ├── handlers.py              # File/console handlers
-│       │   ├── renderers.py             # JSON/console renderers
-│       │   └── manager.py               # Logger configuration
-│       └── utils/                       # Helpers
-│           └── metaclasses.py           # Singleton pattern
+│       └── utils/                       # Helpers (Singleton)
 ├── tests/                               # Unit tests
-├── logs/                                # Application logs (when enabled)
 ├── main.py                              # Entry point
 ├── pyproject.toml                       # Project configuration
 ├── docker-compose.yml                   # Docker setup
@@ -142,37 +150,53 @@ make run
 
 ### Interactive Commands
 
-Once inside the CLI, you can use the following commands:
-
 | Command | Description | Example |
 |---------|-------------|---------|
-| `point <x> <y>` | Create a point | `point 10.5 -20` |
-| `line <x1> <y1> <x2> <y2>` | Create a line | `line 0 0 10 10` |
-| `circle <x> <y> <radius>` | Create a circle | `circle 5 -5 3` |
-| `square <x> <y> <side>` | Create a square | `square 1 1 4` |
+| `point <x> <y> [--angle <degrees>]` | Create a point | `point 10.5 -20 --angle 45` |
+| `line <start_x> <start_y> <end_x> <end_y> [--angle <degrees>]` | Create a line from coordinates | `line 0 0 10 10` |
+| `line-polar <start_x> <start_y> <length> <angle_degrees> [--angle <additional_degrees>]` | Create a line by polar method | `line 0 0 10 60` |
+| `circle <center_x> <center_y> <radius> [--angle <degrees>]` | Create a circle | `circle 5 -5 3` |
+| `square <center_x> <center_y> <side_size> [--angle <degrees>]` | Create a square | `square 1 1 4 -a 45` |
+| `rectangle <center_x> <center_y> <width> <height> [--angle <degrees>]` | Create a rectangle | `rectangle 2 3 4 5` |
+| `ellipse <center_x> <center_y> <radius_x> <radius_y> [--angle <degrees>]"` | Create an ellipse | `ellipse 3 4 2 3` |
 | `list` | List all shapes | `list` |
 | `delete <id>` | Delete shape by ID | `delete 123e4567` |
 | `clear` | Delete all shapes | `clear` |
 | `count` | Show total shapes | `count` |
+| `save [<filename>]` | Save shapes to file | `save my_shapes.json` |
+| `load [<filename>]` | Load shapes from file | `load my_shapes.json` |
 | `help [command]` | Show help | `help circle` |
 | `q`, `quit`, `exit` | Exit CLI | `q` |
 
-### Features
+---
 
-- **Partial ID Matching**: Delete shapes using just the first 8 characters
-- **Input Validation**: Automatic type checking and validation
-- **Formatted Output**: Color-coded and well-structured shape display
-- **Persistent Logging**: Optional file logging with rotation
+<a id="persistent-storage-english"></a>
+## 💾 Persistent Storage
+
+### Saving Shapes
+- `save` without argument saves to `database/shapes.json`.
+- If the file already exists, you will be prompted:
+  - **Append** – loads existing shapes, merges with current (duplicate IDs are skipped), and saves combined set.
+  - **Overwrite** – replaces file content with current shapes.
+
+### Loading Shapes
+- `load` without argument loads from `database/shapes.json`.
+- If there are shapes already in memory:
+  - **Add** – adds loaded shapes, skipping duplicates.
+  - **Replace** – clears memory and loads shapes from file.
+
+This design ensures you never lose data unintentionally and have full control over merging.
 
 ---
 
 <a id="architecture-english"></a>
 ## 🏗 Architecture
 
-1. **Domain Layer**: Pure Python with dataclasses, no external dependencies
-2. **Repository Pattern**: Abstract `IShapeRepository` protocol enables easy swapping of storage
-3. **Dependency Injection**: Services receive repositories via constructor
-4. **Protocol-based Interfaces**: Uses `typing.Protocol` for loose coupling
+1. **Domain Layer**: Pure Python with dataclasses, no external dependencies.
+2. **Repository Pattern**: Abstract `IShapeRepository` protocol enables easy swapping of storage (in‑memory, file‑based, etc.).
+3. **Serialization**: Infrastructure module converts domain objects to/from JSON.
+4. **Dependency Injection**: Services receive repository and config via constructor.
+5. **Protocol-based Interfaces**: Uses `typing.Protocol` for loose coupling.
 
 ---
 
@@ -183,46 +207,32 @@ A sophisticated, production-ready logging system built with `structlog`.
 
 ### Features
 
-- **Structured Logging**: All logs are structured events, not just strings
+- **Structured Logging**: All logs are structured events, not just strings.
 - **Dual Output**:
-  - Development: Beautiful colored console output
-  - Production: JSON format for log aggregation
-- **File Rotation**: Built-in log rotation with size limits
-- **Third-party Hijacking**: Automatically configures logs for:
-  - `pydantic` (set to INFO level)
-- **Singleton Manager**: Ensures single configuration point
+  - Development: Beautiful colored console output.
+  - Production: JSON format for log aggregation.
+- **File Rotation**: Built-in log rotation with size limits.
+- **Third-party Hijacking**: Automatically configures logs for `pydantic`.
 
 ### Configuration
 
 Via `config.py` or `.env`(optional):
 
 ```python
-# Example logging configuration
 LoggingConfig(
     debug=True,                          # False for JSON output
     app_name="Vector Editor",
     log_level="INFO",
-    enable_file_logging=True,
+    enable_file_logging=False,
+)
+FileSystem(
+    db_dir=Path("database"),
+    db_json_file_name="shapes.json",
     logs_dir=Path("logs"),
     logs_file_name="app.log",
-    max_file_size_mb=10,
-    backup_count=5,
+    max_log_file_size_mb=10,
+    log_backup_count=5,
 )
-```
-
-### Example Log Output
-
-**Development (Console):**
-```
-2026-03-07 10:30:45 [info     ] application_started      config={'debug': True, ...}
-2026-03-07 10:30:47 [debug    ] point_created            shape_id='123e4567' x=10.5 y=20.0
-2026-03-07 10:30:49 [debug    ] shapes_retrieved         count=5
-```
-
-**Production (JSON):**
-```json
-{"event": "application_started", "timestamp": "2026-03-07T10:30:45Z", "level": "info", "logger": "main.py", "config": {...}}
-{"event": "point_created", "shape_id": "123e4567", "x": 10.5, "y": 20.0, "timestamp": "...", "level": "debug"}
 ```
 
 ---
@@ -239,7 +249,7 @@ uv pip install -e . --group dev
 # Activate venv
 source .venv/bin/activate  # or .venv\Scripts\activate
 
-# Install pre-commit hooks (only if venv is activated)
+# Install pre-commit hooks
 pre-commit install
 
 # Run tests
@@ -257,10 +267,10 @@ make clean
 
 ### Code Quality
 
-- **ruff**: Fast Python linter and formatter (line length 79)
-- **ty**: Fast type checking
-- **pytest**: Comprehensive test suite with coverage
-- **pre-commit**: Automated checks before commits
+- **ruff**: Fast Python linter and formatter (line length 79).
+- **ty**: Fast type checking.
+- **pytest**: Comprehensive test suite with coverage.
+- **pre-commit**: Automated checks before commits.
 
 ### Docker
 
@@ -294,9 +304,8 @@ uv run pytest tests/unit/cli/test_cli.py
 <a id="license-english"></a>
 ## 📝 License
 
-MIT License - feel free to use and modify.
+MIT License – free to use and modify.
 
----
 
 <br>
 <hr>
@@ -307,10 +316,14 @@ MIT License - feel free to use and modify.
 <div align="center">
   <a href="#english">🇬🇧 English</a> | <a href="#russian">🇷🇺 Русский</a>
 </div>
+<br>
 
+---
+
+<a id="russian"></a>
 <div align="center">
 
-# 📐 Редактор Векторных Фигур (CLI)
+# 📐 Редактор векторных фигур (CLI)
 
 Интерактивный инструмент командной строки для создания и управления геометрическими фигурами.
 Построен на принципах чистой архитектуры.
@@ -324,6 +337,7 @@ MIT License - feel free to use and modify.
 - [Быстрый старт](#быстрый-старт-russian)
 - [Структура проекта](#структура-проекта-russian)
 - [Использование](#использование-russian)
+- [Постоянное хранилище](#постоянное-хранилище-russian)
 - [Архитектура](#архитектура-russian)
 - [Система логирования](#система-логирования-russian)
 - [Разработка](#разработка-russian)
@@ -335,31 +349,37 @@ MIT License - feel free to use and modify.
 ## ✨ Возможности
 
 - **Управление фигурами**:
-  - Создание точек, линий, кругов и квадратов
-  - Просмотр всех фигур с форматированием
-  - Удаление по ID (с поддержкой частичного совпадения)
+  - Создание точек, линий, кругов, квадратов, прямоугольников, эллипсов
+  - Просмотр всех фигур с форматированным выводом
+  - Удаление фигур по ID (с поддержкой частичного совпадения)
   - Удаление всех фигур одной командой
-  - Подсчёт количества фигур
+  - Подсчёт общего количества фигур
+
+- **Постоянное хранилище**:
+  - Сохранение текущих фигур в JSON-файл
+  - Загрузка фигур из JSON-файла с опциональным слиянием
+  - Автоматическое разрешение конфликтов (дублирующиеся ID пропускаются)
+  - Настраиваемое расположение файла (по умолчанию: `database/shapes.json`)
 
 - **Чистая архитектура**:
-  - Чёткое разделение слоёв (Domain, Application, Infrastructure)
-  - Паттерн Repository для хранения данных
-  - Dependency injection
-  - Интерфейсы через Protocol
+  - Чёткое разделение слоёв (домен, приложение, инфраструктура)
+  - Паттерн «Репозиторий» для хранения данных
+  - Готовность к внедрению зависимостей
+  - Проектирование на основе интерфейсов
 
 - **Промышленное логирование**:
-  - Структурированные логи через `structlog`
-  - JSON для продакшена, цветной вывод для разработки
-  - Автоматический контекст
-  - Ротация файлов
-  - Конфигурация сторонних логгеров
+  - Структурированное логирование с помощью `structlog`
+  - Вывод в JSON для продакшена, цветной вывод для разработки
+  - Привязка контекста
+  - Поддержка ротации файлов
+  - Перехват логов сторонних библиотек
 
-- **Готов к продакшену**:
+- **Готовность к продакшену**:
   - Полная типизация (Python 3.14)
-  - Линтинг и форматирование Ruff
-  - Pre-commit хуки
-  - Docker с `uv`
-  - Комплексные тесты
+  - Линтинг и форматирование с Ruff
+  - Pre-commit хуки для контроля качества кода
+  - Поддержка Docker с `uv` для быстрой сборки
+  - Комплексный набор тестов
 
 ---
 
@@ -378,7 +398,7 @@ MIT License - feel free to use and modify.
 git clone https://github.com/script-logic/vector-editor-cli.git
 cd vector-editor-cli
 
-# Установка с uv
+# Установка с помощью uv
 uv venv
 uv pip install -e .
 ```
@@ -389,10 +409,10 @@ uv pip install -e .
 # Запуск интерактивного CLI
 uv run python main.py
 
-# Через Docker
+# С использованием Docker
 docker-compose up
 
-# Через Makefile
+# С использованием Makefile
 make run
 ```
 
@@ -402,32 +422,33 @@ make run
 ## 📁 Структура проекта
 
 ```
+├── database/                            # Постоянное хранилище (JSON-файлы)
+│   └── shapes.json                      # Файл хранения по умолчанию
+├── logs/                                # Логи приложения
 ├── src/
 │   └── vector_editor/
-│       ├── domain/                      # Бизнес-логика
-│       │   ├── entities/                # Фигуры (Point, Line, Circle, Square)
-│       │   └── interfaces/              # Протокол репозитория
 │       ├── application/                 # Слой приложения
-│       │   └── services/                # ShapeService (use cases)
-│       ├── infrastructure/              # Внешние зависимости
-│       │   └── repositories/            # InMemoryShapeRepository
+│       │   └── services/                # ShapeService
 │       ├── cli/                         # Интерфейс командной строки
-│       │   ├── app.py                   # Click команды
-│       │   └── formatting.py            # Форматирование вывода
+│       │   ├── app.py                   # Команды Click
+│       │   └── formatting.py            # Вывод в консоль
 │       ├── config/                      # Конфигурация
-│       │   └── config.py                # Pydantic настройки
-│       ├── logger/                      # Система логирования
-│       │   ├── processors.py            # Процессоры логов
-│       │   ├── handlers.py              # Обработчики (файл/консоль)
-│       │   ├── renderers.py             # Рендереры (JSON/консоль)
-│       │   └── manager.py               # Менеджер логгера
-│       └── utils/                       # Вспомогательные утилиты
-│           └── metaclasses.py           # Паттерн Singleton
+│       │   └── config.py                # Настройки Pydantic
+│       ├── domain/                      # Основная бизнес-логика
+│       │   ├── definitions/             # Определения фигур
+│       │   ├── geometry/                # Геометрические представления
+│       │   ├── interfaces/              # Протокол репозитория
+│       │   ├── primitives/              # Координаты, трансформация
+│       │   └── placed_shape.py          # Фигура с ID и трансформацией
+│       ├── infrastructure/              # Внешние зависимости
+│       │   ├── repositories/            # InMemoryShapeRepository
+│       │   └── serialization.py         # JSON-сериализация
+│       ├── logger/                      # Система структурированного логирования
+│       └── utils/                       # Вспомогательные утилиты (Singleton)
 ├── tests/                               # Модульные тесты
-├── logs/                                # Логи приложения (если включено)
 ├── main.py                              # Точка входа
-├── pyproject.toml                       # Конфигурация проекта
-├── docker-compose.yml                   # Docker настройки
+├── pyproject.toml                       # Метаданные проекта
+├── docker-compose.yml                   # Настройки Docker
 └── Makefile                             # Задачи разработки
 ```
 
@@ -436,87 +457,91 @@ make run
 <a id="использование-russian"></a>
 ## 🎯 Использование
 
-### Команды
+### Интерактивные команды
 
 | Команда | Описание | Пример |
 |---------|----------|---------|
-| `point <x> <y>` | Создать точку | `point 10.5 -20` |
-| `line <x1> <y1> <x2> <y2>` | Создать линию | `line 0 0 10 10` |
-| `circle <x> <y> <radius>` | Создать круг | `circle 5 -5 3` |
-| `square <x> <y> <side>` | Создать квадрат | `square 1 1 4` |
+| `point <x> <y> [--angle <degrees>]` | Создать точку | `point 10.5 -20 --angle 45` |
+| `line <start_x> <start_y> <end_x> <end_y> [--angle <degrees>]` | Создать линию по координатам | `line 0 0 10 10` |
+| `line-polar <start_x> <start_y> <length> <angle_degrees> [--angle <additional_degrees>]` | Создать линию полярным методом | `line 0 0 10 60` |
+| `circle <center_x> <center_y> <radius> [--angle <degrees>]` | Создать круг | `circle 5 -5 3` |
+| `square <center_x> <center_y> <side_size> [--angle <degrees>]` | Создать квадрат | `square 1 1 4 -a 45` |
+| `rectangle <center_x> <center_y> <width> <height> [--angle <degrees>]` | Создать прямоугольник | `rectangle 2 3 4 5` |
+| `ellipse <center_x> <center_y> <radius_x> <radius_y> [--angle <degrees>]"` | Создать эллипс | `ellipse 3 4 2 3` |
 | `list` | Показать все фигуры | `list` |
 | `delete <id>` | Удалить фигуру по ID | `delete 123e4567` |
 | `clear` | Удалить все фигуры | `clear` |
-| `count` | Показать количество | `count` |
-| `help [команда]` | Показать справку | `help circle` |
-| `q`, `quit`, `exit` | Выход | `q` |
+| `count` | Показать общее количество фигур | `count` |
+| `save [<filename>]` | Сохранить фигуры в файл | `save my_shapes.json` |
+| `load [<filename>]` | Загрузить фигуры из файла | `load my_shapes.json` |
+| `help [command]` | Показать справку | `help circle` |
+| `q`, `quit`, `exit` | Выйти из CLI | `q` |
 
-### Особенности
+---
 
-- **Частичный ID**: Удаляйте фигуры по первым 8 символам ID
-- **Валидация**: Автоматическая проверка типов и значений
-- **Цветной вывод**: Удобное форматирование фигур
-- **Логирование**: Опциональное сохранение в файл с ротацией
+<a id="постоянное-хранилище-russian"></a>
+## 💾 Постоянное хранилище
+
+### Сохранение фигур
+- `save` без аргумента сохраняет в `database/shapes.json`.
+- Если файл уже существует, будет задан вопрос:
+  - **Добавить** – загружает существующие фигуры, объединяет с текущими (дублирующиеся ID пропускаются) и сохраняет объединённый набор.
+  - **Перезаписать** – заменяет содержимое файла текущими фигурами.
+
+### Загрузка фигур
+- `load` без аргумента загружает из `database/shapes.json`.
+- Если в памяти уже есть фигуры:
+  - **Добавить** – добавляет загруженные фигуры, пропуская дубликаты.
+  - **Заменить** – очищает память и загружает фигуры из файла.
+
+Такое поведение гарантирует, что вы никогда не потеряете данные случайно и сохраняете полный контроль над слиянием.
 
 ---
 
 <a id="архитектура-russian"></a>
 ## 🏗 Архитектура
 
-1. **Слой Domain**: Чистый Python, никаких внешних зависимостей
-2. **Паттерн Repository**: Абстрактный протокол `IShapeRepository` для лёгкой замены хранилища
-3. **Dependency Injection**: Сервисы получают репозиторий через конструктор
-4. **Интерфейсы через Protocol**: Слабая связанность компонентов
+1. **Слой домена**: Чистый Python с датаклассами, без внешних зависимостей.
+2. **Паттерн «Репозиторий»**: Абстрактный протокол `IShapeRepository` позволяет легко заменять хранилище (в памяти, на основе файлов и т.д.).
+3. **Сериализация**: Модуль инфраструктуры преобразует объекты домена в JSON и обратно.
+4. **Внедрение зависимостей**: Сервисы получают репозиторий и конфигурацию через конструктор.
+5. **Интерфейсы на основе протоколов**: Использование `typing.Protocol` для слабой связанности.
 
 ---
 
 <a id="система-логирования-russian"></a>
 ## 📝 Система логирования
 
-Промышленная система логирования на базе `structlog`.
+Сложная, готовая к продакшену система логирования на базе `structlog`.
 
 ### Возможности
 
-- **Структурированные логи**: Все логи - это события, а не строки
-- **Два режима**:
-  - Разработка: цветной вывод в консоль
-  - Продакшен: JSON для агрегации
-- **Ротация**: Встроенная ротация с ограничением по размеру
-- **Конфигурация сторонних библиотек**: Автоматически настраивает:
-  - `pydantic` (уровень INFO)
-- **Singleton**: Единая точка конфигурации
+- **Структурированное логирование**: Все логи — это структурированные события, а не просто строки.
+- **Два режима вывода**:
+  - Разработка: красивый цветной вывод в консоль.
+  - Продакшен: JSON-формат для агрегации логов.
+- **Ротация файлов**: Встроенная ротация логов с ограничением по размеру.
+- **Перехват сторонних логгеров**: Автоматически настраивает логи для `pydantic`.
 
 ### Конфигурация
 
-Через `config.py` или `.env`(опционально):
+Через `config.py` или `.env` (опционально):
 
 ```python
-# Пример конфигурации логирования
 LoggingConfig(
-    debug=True,                          # False для JSON вывода
+    debug=True,                          # False для JSON-вывода
     app_name="Vector Editor",
     log_level="INFO",
-    enable_file_logging=True,
+    enable_file_logging=False,
+)
+FileSystem(
+    db_dir=Path("database"),
+    db_json_file_name="shapes.json",
     logs_dir=Path("logs"),
     logs_file_name="app.log",
-    max_file_size_mb=10,
-    backup_count=5,
+    max_log_file_size_mb=10,
+    log_backup_count=5,
 )
-```
-
-### Пример вывода
-
-**Разработка (Консоль):**
-```
-2026-03-07 10:30:45 [info     ] application_started      config={'debug': True, ...}
-2026-03-07 10:30:47 [debug    ] point_created            shape_id='123e4567' x=10.5 y=20.0
-2026-03-07 10:30:49 [debug    ] shapes_retrieved         count=5
-```
-
-**Продакшен (JSON):**
-```json
-{"event": "application_started", "timestamp": "2026-03-07T10:30:45Z", "level": "info", "logger": "main.py", "config": {...}}
-{"event": "point_created", "shape_id": "123e4567", "x": 10.5, "y": 20.0, "timestamp": "...", "level": "debug"}
 ```
 
 ---
@@ -527,42 +552,42 @@ LoggingConfig(
 ### Настройка
 
 ```bash
-# Установка с dev зависимостями
+# Установка с dev-зависимостями
 uv pip install -e . --group dev
 
-# Активировать окружение (если не активно)
+# Активировать виртуальное окружение
 source .venv/bin/activate  # или .venv\Scripts\activate
 
-# Установка pre-commit хуков (только с активированным окружением)
+# Установить pre-commit хуки
 pre-commit install
 
-# Запуск тестов
+# Запустить тесты
 make test
 
-# Линтинг
+# Запустить линтер
 make lint
 
-# Авто-исправление
+# Исправить форматирование
 make fix
 
-# Очистка кеша
+# Очистить кеш
 make clean
 ```
 
 ### Качество кода
 
-- **ruff**: Быстрый линтер и форматтер (длина строки 79)
-- **ty**: Быстрая проверка типов
-- **pytest**: Комплексные тесты с покрытием
-- **pre-commit**: Автоматические проверки
+- **ruff**: Быстрый линтер и форматтер Python (длина строки 79).
+- **ty**: Быстрая проверка типов.
+- **pytest**: Комплексный набор тестов с покрытием.
+- **pre-commit**: Автоматические проверки перед коммитами.
 
 ### Docker
 
 ```bash
-# Сборка и запуск
+# Собрать и запустить
 make docker-run
 
-# Пересборка
+# Пересобрать
 make docker-rebuild
 
 # Или вручную
@@ -573,10 +598,10 @@ docker-compose down
 ### Тестирование
 
 ```bash
-# Все тесты
+# Запустить все тесты
 uv run pytest
 
-# С coverage отчётом
+# С отчётом о покрытии
 uv run pytest --cov=src --cov-report=html
 
 # Конкретный тест
@@ -588,6 +613,6 @@ uv run pytest tests/unit/cli/test_cli.py
 <a id="лицензия-russian"></a>
 ## 📝 Лицензия
 
-MIT License - свободно используйте и модифицируйте.
+Лицензия MIT – можно свободно использовать и модифицировать.
 
 ---

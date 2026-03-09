@@ -8,6 +8,7 @@ services:
     tty: true
     volumes:
       - ./logs:/app/logs:rw
+      - ./database:/app/database:rw
       - ./src:/app/src:ro
       - ./main.py:/app/main.py:reload
     restart: "no"
