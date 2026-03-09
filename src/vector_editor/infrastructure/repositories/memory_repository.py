@@ -31,14 +31,9 @@ class InMemoryShapeRepository(IShapeRepository):
         Args:
             shape: The shape to add
 
-        Raises:
-            ValueError: If a shape with the same ID already exists
         """
         if shape.id in self._shapes:
-            self._logger.error(
-                "shape_already_exists",
-                shape_id=str(shape.id),
-            )
+            self._logger.debug("shape_already_exists", shape_id=str(shape.id))
             raise ValueError(f"Shape with id {shape.id} already exists")
 
         self._shapes[shape.id] = shape

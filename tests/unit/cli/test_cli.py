@@ -7,8 +7,8 @@ from uuid import UUID, uuid4
 
 import pytest
 from click.testing import CliRunner, Result
-from src.vector_editor.application.services.shape_service import ShapeService
-from src.vector_editor.cli.app import cli
+from src.vector_editor.application.services import ShapeService
+from src.vector_editor.cli import cli
 from src.vector_editor.domain import PlacedShape
 from src.vector_editor.domain.definitions import (
     CircleDefinition,

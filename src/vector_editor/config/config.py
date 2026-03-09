@@ -19,16 +19,25 @@ class LoggingConfig(BaseSettings):
     debug: bool = True  # if True then color console render, else json render
     log_level: str = "INFO"
     enable_file_logging: bool = False
+
+
+class FileSystem(BaseSettings):
+    """Configuration for the file system."""
+
+    db_dir: Path = Path("database")
+    db_json_file_name: str = "shapes.json"
+    db_json_serialization_version: str = "1.0"
     logs_dir: Path = Path("logs")
     logs_file_name: str = "app.log"
-    max_file_size_mb: int = 10
-    backup_count: int = 5
+    max_log_file_size_mb: int = 10
+    log_backup_count: int = 5
 
 
 class AppConfig(BaseSettings):
     """Main application configuration."""
 
     logger: LoggingConfig = Field(default_factory=LoggingConfig)
+    file_system: FileSystem = Field(default_factory=FileSystem)
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -46,16 +55,19 @@ class AppConfig(BaseSettings):
         Returns:
             ILoggingConfig: Configuration object for the logging system.
         """
-        return LoggingConfig(
-            debug=self.logger.debug,
-            app_name=self.logger.app_name,
-            log_level=self.logger.log_level.upper(),
-            enable_file_logging=self.logger.enable_file_logging,
-            logs_dir=self.logger.logs_dir,
-            logs_file_name=self.logger.logs_file_name,
-            max_file_size_mb=self.logger.max_file_size_mb,
-            backup_count=self.logger.backup_count,
-        )
+
+        class LoggerAdapter:
+            def __init__(self, config: AppConfig):
+                self.debug = config.logger.debug
+                self.app_name = config.logger.app_name
+                self.log_level = config.logger.log_level.upper()
+                self.enable_file_logging = config.logger.enable_file_logging
+                self.logs_dir = config.file_system.logs_dir
+                self.logs_file_name = config.file_system.logs_file_name
+                self.max_file_size_mb = config.file_system.max_log_file_size_mb
+                self.backup_count = config.file_system.log_backup_count
+
+        return LoggerAdapter(self)
 
 
 @lru_cache

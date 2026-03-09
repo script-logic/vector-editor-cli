@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "shapes": [
+    {
+      "id": "b83c6b39-3d64-4bab-ba0e-159006f831a5",
+      "transform": {
+        "rotation_deg": 0.0
+      },
+      "definition": {
+        "type": "point",
+        "coordinates": {
+          "x": 5.0,
+          "y": -34534.0
+        }
+      }
+    },
+    {
+      "id": "5add9e1e-2faf-4ffe-a105-4ff99f7ac6d3",
+      "transform": {
+        "rotation_deg": 44.0
+      },
+      "definition": {
+        "type": "ellipse",
+        "center": {
+          "x": 3.0,
+          "y": -4.0
+        },
+        "radius_x": 234.0,
+        "radius_y": 4.0
+      }
+    }
+  ]
+}

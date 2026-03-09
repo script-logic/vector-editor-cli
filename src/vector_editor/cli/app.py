@@ -2,10 +2,15 @@
 CLI application for vector editor.
 """
 
+from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 import click
+import orjson
 from src.vector_editor.application.services import ShapeService
+from src.vector_editor.config import AppConfig
+from src.vector_editor.infrastructure.serialization import shape_to_dict
 from src.vector_editor.logger import get_logger
 
 from .formatting import format_shape, format_shape_list
@@ -80,6 +85,14 @@ def _get_shape_service(ctx: click.Context) -> ShapeService:
             "Shape service not initialized. This is a bug."
         )
     return shape_service
+
+
+def _get_config(ctx: click.Context) -> AppConfig:
+    """Get config from context."""
+    config = ctx.obj.get("config")
+    if config is None:
+        raise click.ClickException("Config not initialized. This is a bug.")
+    return config
 
 
 @cli.command(
@@ -499,3 +512,133 @@ def help_command(ctx: click.Context, command: str | None) -> None:
             click.echo(f"Unknown command: {command}")
     else:
         click.echo(ctx.get_help())
+
+
+@cli.command("save")
+@click.argument("filename", required=False, type=click.Path(path_type=Path))
+@click.pass_context
+def save_shapes(ctx: click.Context, filename: Path | None) -> None:
+    """
+    Save all shapes to a JSON file.
+    """
+    service = _get_shape_service(ctx)
+    config = _get_config(ctx)
+    path = (
+        config.file_system.db_dir / filename
+        if filename
+        else config.file_system.db_dir / config.file_system.db_json_file_name
+    )
+
+    file_exists = path.exists() and path.stat().st_size > 0
+
+    if not file_exists:
+        count = service.save_to_file(path)
+        click.echo(f"✔ Saved {count} shape(s) to {path}")
+        logger.debug("shapes_saved_via_cli", path=str(path), count=count)
+        return
+
+    current_count = service.count_shapes()
+    click.echo(f"Current shapes in memory: {current_count}")
+    click.echo(f"File {path} already exists and contains shapes.")
+
+    if click.confirm(
+        "Append current shapes to existing file? (No will overwrite)",
+        default=False,
+    ):
+        try:
+            existing_shapes = service.load_from_file(path)
+        except (ValueError, OSError) as e:
+            raise click.ClickException(f"Failed to read existing file: {e}")
+
+        current_shapes = service.get_all_shapes()
+        shape_dict = {
+            shape.id: shape for shape in existing_shapes + current_shapes
+        }
+        merged_shapes = list(shape_dict.values())
+
+        data: dict[str, Any] = {
+            "version": config.file_system.db_json_serialization_version,
+            "shapes": [shape_to_dict(s) for s in merged_shapes],
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
+
+        click.echo(
+            f"✔ Appended {current_count} shape(s) to file, "
+            f"total {len(merged_shapes)} unique shape(s) saved."
+        )
+        logger.debug(
+            "shapes_appended_via_cli",
+            path=str(path),
+            added=current_count,
+            total=len(merged_shapes),
+        )
+    else:
+        count = service.save_to_file(path)
+        click.echo(f"✔ Overwrote file with {count} shape(s)")
+        logger.debug("shapes_overwrote_via_cli", path=str(path), count=count)
+
+
+@cli.command("load")
+@click.argument("filename", required=False, type=click.Path(path_type=Path))
+@click.pass_context
+def load_shapes(ctx: click.Context, filename: Path | None) -> None:
+    """
+    Load shapes from a JSON file.
+    """
+    service = _get_shape_service(ctx)
+    config = _get_config(ctx)
+    path = (
+        config.file_system.db_dir / filename
+        if filename
+        else config.file_system.db_dir / config.file_system.db_json_file_name
+    )
+
+    try:
+        loaded_shapes = service.load_from_file(path)
+    except FileNotFoundError:
+        raise click.ClickException(f"File not found: {path}")
+    except ValueError as e:
+        raise click.ClickException(f"Invalid file format: {e}")
+    except OSError as e:
+        logger.error("load_failed", error=str(e))
+        raise click.ClickException(f"Failed to load file: {e}")
+
+    if not loaded_shapes:
+        click.echo("ℹ No shapes found in file.")
+        return
+
+    existing_count = service.count_shapes()
+
+    if existing_count == 0:
+        added = service.add_shapes(loaded_shapes, skip_duplicates=False)
+        click.echo(f"✔ Loaded {added} shape(s) from {path}")
+        return
+
+    click.echo(f"Current shapes: {existing_count}")
+    click.echo(f"Loaded shapes from file: {len(loaded_shapes)}")
+    if click.confirm(
+        "Add loaded shapes to existing? (No will replace existing)",
+        default=False,
+    ):
+        added = service.add_shapes(loaded_shapes, skip_duplicates=True)
+        skipped = len(loaded_shapes) - added
+        if skipped:
+            click.echo(
+                f"✔ Added {added} shape(s), skipped {skipped} duplicate(s)."
+            )
+        else:
+            click.echo(f"✔ Added {added} shape(s).")
+    else:
+        service.clear_all()
+        added = service.add_shapes(loaded_shapes, skip_duplicates=False)
+        click.echo(f"✔ Replaced with {added} shape(s).")
+
+    logger.debug(
+        "shapes_loaded_via_cli",
+        path=str(path),
+        loaded=len(loaded_shapes),
+        added=added,
+        replaced=existing_count > 0,
+    )

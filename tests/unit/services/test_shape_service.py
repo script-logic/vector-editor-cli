@@ -6,7 +6,7 @@ from unittest.mock import Mock, create_autospec
 from uuid import uuid4
 
 import pytest
-from src.vector_editor.application.services.shape_service import ShapeService
+from src.vector_editor.application.services import ShapeService
 from src.vector_editor.domain import PlacedShape
 from src.vector_editor.domain.definitions import (
     CircleDefinition,
@@ -27,9 +27,14 @@ def mock_repository() -> Mock:
 
 
 @pytest.fixture
-def shape_service(mock_repository: Mock) -> ShapeService:
+def mock_config() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def shape_service(mock_repository: Mock, mock_config: Mock) -> ShapeService:
     """Fixture for ShapeService with mocked repository."""
-    return ShapeService(repository=mock_repository)
+    return ShapeService(repository=mock_repository, config=mock_config)
 
 
 def test_create_point(
